@@ -1,0 +1,489 @@
+<html>
+	<head>
+		<title>
+			RBone Demo
+		</title>
+		
+		<script src="../jquery.js" ></script>
+		
+		<script>
+		
+			var RB = (function($){
+				
+				var _ = {};
+				_.props = {
+					className : "robot",
+					width: 1000,
+					height: 500,
+					nameScheme: "RB_wrap_",
+					activeOverride: true
+				
+				};
+				_.instances = [];
+				
+				$(document).ready(function(){
+					
+					$("." + _.props.className).each(function(number, wrapper){
+						
+						_.instances.push(
+							(function(){
+								
+								var __ = {};
+								
+								__.parent = wrapper;
+								__.id = number;
+								__.objects = {};
+								
+								__.props = {
+									isActive: false,
+									interval: 25,
+									directionX: 1,
+									directionY: 1,
+									scrollingWindow : 200
+								}
+									
+								__.init = function() {
+								
+									var wrap = __.objects.wrap = document.createElement("div");
+									
+									__.props.width = _.props.width;
+									__.props.height = _.props.height;
+									__.props.position = 0;
+																		
+									wrap.id = _.props.nameScheme + __.id;
+									wrap.width = __.props.width;
+									wrap.height = __.props.height;
+									
+									__.parent.appendChild(wrap);
+									
+									__.props.isActive = true;
+									
+									return __.start();			
+
+								}
+								
+								__.render = function(){
+								
+								
+									var robot = "\
+									<div id='robot_block_side_left' ></div>\
+									<div id='robot_block_top' ></div>\
+									<div id='robot_block_side_right' ></div>\
+									<div id='robot_block_side_front' ></div>\
+									<div id='robot_block_side_back' ></div>\
+									<div id='robot_left_wheel' ></div>\
+									<div id='robot_right_wheel' ></div>\
+									\
+									\
+									\
+									\
+									\
+									";
+									
+									__.objects.wrap.innerHTML = robot;
+
+									return __;
+								};
+								
+								__.start = function() {
+									
+									__.props.isActive = _.props.activeOverride;
+									
+									if ( __.props.isActive ) {										
+										
+									} else {
+																			
+									}
+								
+									setTimeout( __.start, __.props.interval );
+									
+									return __.render();
+									
+								}
+								
+								return __.init();
+							
+							})()
+						);						
+					
+					});
+				
+				});
+			
+				return _;
+			
+			
+			})(jQuery);
+						
+			$(document).ready(function() {
+				$("#active").change(function() {
+					RB.props.activeOverride = $("#active")[0].checked;
+				});
+			});
+		</script>
+		
+		<script>
+		
+			$(document).ready(function(){
+				var props = 'transform WebkitTransform MozTransform OTransform msTransform'.split(' '),
+					prop,
+					el = document.createElement('div');
+
+				for(var i = 0, l = props.length; i < l; i++) {
+					if(typeof el.style[props[i]] !== "undefined") {
+						prop = props[i];
+						break;
+					}
+				}
+
+				var xAngle = -30, yAngle = 0, zAngle = 0;
+				$('body').keydown(function(evt) {
+					switch(evt.keyCode) {
+						case 37: // left
+							yAngle -= 90;
+							break;
+
+						case 38: // up
+							xAngle += 90;
+							evt.preventDefault();
+							break;
+
+						case 39: // right
+							yAngle += 90;
+							break;
+
+						case 40: // down
+							xAngle -= 90;
+							evt.preventDefault();
+							break;
+					};
+					document.getElementById('cube').style[prop] = "rotateX("+xAngle+"deg) rotateY("+yAngle+"deg) rotateZ("+zAngle+"deg)";
+				});
+				
+				var xrot = 0, zrot = 75, xmin = -40, xmax = 40, zmin = 0, zmax = 180, xinc = 1, zinc = 1, xdir = 1, zdir = 1;
+				
+				var driveXDir = -2, driveYDir = 1, driveZDir = 0, driveXPos = 500, driveYPos = 300;
+
+				var barriers = $(".barrier").toArray();
+				
+				
+				var boundaryX = [200,800];
+				var boundaryY = [10,500];
+				
+				var XYframes = [
+					{
+						x: -30,
+						y: 0,
+						z: 0
+					},
+					{
+						x: 0,
+						y: -90,
+						z: 120
+					}
+				]
+				
+				function drive() {
+						
+						driveXPos += driveXDir;
+						driveYPos += driveYDir;
+						
+						$("#cube")[0].style.left = driveXPos + "px"; 
+						$("#cube")[0].style.top = driveYPos + "px"; 
+						
+						for ( var i=0; i<boundaryX.length; ++i ) {
+						
+							if ( (driveXPos > boundaryX[i] && driveXDir*10 + driveXPos < boundaryX[i]) ||
+								(driveXPos < boundaryX[i] && driveXDir*10 + driveXPos > boundaryX[i])
+								) {
+									
+									turn();
+									
+									//var c = driveXDir;
+									//driveYDir = driveXDir*1;
+									driveXDir *= -1;
+									
+								
+								
+								}
+						
+						}
+
+						for ( var i=0; i<boundaryY.length; ++i ) {
+						
+							if ( (driveYPos > boundaryY[i] && driveYDir*10 + driveYPos < boundaryY[i]) ||
+								(driveYPos < boundaryY[i] && driveYDir*10 + driveYPos > boundaryY[i])
+								) {
+									
+									turn();
+									//var c = driveYDir;
+									//driveXDir = driveYDir*1;
+									driveYDir *= -1;
+									
+								
+								
+								}
+						
+						}
+						requestAnimationFrame( drive );
+				}
+				
+				tdir = -1;
+				
+				var pos = 0;
+				
+				
+				
+				function turn() {
+				
+					pos = (pos + 1)%XYframes.length;
+					xAngle = XYframes[pos].x;
+					yAngle = XYframes[pos].y;
+					zAngle = XYframes[pos].z;
+
+					$('#cube')[0].style[prop] = "rotateX("+xAngle+"deg) rotateY("+yAngle+"deg) rotateZ("+zAngle+"deg)";
+
+				}
+				
+				function rotateLight() {
+					
+					xrot += xdir*xinc//, zrot += zdir*zinc;
+					
+					if ( xrot >= xmax || xrot <= xmin ) xdir *= -1;
+					if ( zrot >= zmax || zrot <= zmin ) zdir *= -1;
+					
+					
+					
+					$(".redlight")[0].style[prop] = "rotateZ(" + zrot + "deg) rotateX(" + xrot 
+						+ "deg)"+ "translateY(60px) translateZ(0px) translateX(-50px)";
+					
+					requestAnimationFrame(rotateLight);
+				
+				}
+				
+				rotateLight();
+				drive();
+			});
+
+		
+		
+		</script>
+		
+		
+		<style>
+			#experiment {
+			  -webkit-perspective: 400px;
+			  -webkit-perspective-origin: 50% 200px;
+			  -moz-perspective: 800px;
+			  -moz-perspective-origin: 50% 200px;
+			  perspective: 800px;
+			  perspective-origin: 50% 200px;
+			}
+
+			#cube {
+			  position: absolute;
+			  margin: 100px auto;
+			  height: 50px;
+			  width: 50px;
+			  -webkit-transition: -webkit-transform 2s linear;
+			  -webkit-transform-style: preserve-3d;
+			  -moz-transition: -moz-transform 2s linear;
+			  -moz-transform-style: preserve-3d;
+			  transition: transform 2s linear;
+			  transform-style: preserve-3d;
+			  -webkit-transform: rotateX(-30deg);
+			  -moz-transform: rotateX(-30deg);
+			  transform: rotateX(-30deg);
+			}
+
+			.face {
+			  position: absolute;
+			  height: 50px;
+			  width: 50px;
+			  padding: 20px;
+			  background-color: rgba(0, 170, 245, 0.7);
+			  font-size: 27px;
+			  line-height: 1em;
+			  color: #fff;
+			  border: 1px solid #555;
+			  border-radius: 3px;
+			}
+
+			#cube .one  {
+			width:100px;
+			  -webkit-transform: rotateX(90deg) translateZ(50px);
+			  -moz-transform: rotateX(90deg) translateZ(50px);
+			  transform: rotateX(90deg) translateZ(50px);
+			}
+
+			#cube .two {
+				width:100px;
+				height:0px;
+			  -webkit-transform: translateZ(50px);
+			  -moz-transform: translateZ(50px);
+			  transform: translateZ(50px);
+			}
+
+			#cube .three {
+				width:50px;
+				height:0px;
+			  	-webkit-transform: rotateY(90deg) translateZ(100px);
+			  	-moz-transform: rotateY(90deg) translateZ(100px);
+			  	transform: rotateY(90deg) translateZ(100px);
+			}
+
+			#cube .four {
+				width:100px;
+				height:0px;
+				-webkit-transform: rotateY(180deg) translateZ(50px);
+				-moz-transform: rotateY(180deg) translateZ(50px);
+				transform: rotateY(180deg) translateZ(50px);
+			}
+
+			#cube .five {
+				width:50px;
+				height:0px;
+			  	-webkit-transform: rotateY(-90deg) translateZ(50px);
+			  	-moz-transform: rotateY(-90deg) translateZ(50px);
+			  	transform: rotateY(-90deg) translateZ(50px);
+			}
+
+			#cube .six {
+				width:100px;
+				-webkit-transform: rotateX(-90deg) rotate(180deg) translateZ(0px);
+			  	-moz-transform: rotateX(-90deg) rotate(180deg) translateZ(0px);
+			  	transform: rotateX(-90deg) rotate(180deg) translateZ(0px);
+			}
+			
+			.wheel {
+				width:30px;
+				height:30px;
+				border-radius:50%;
+				border:2px solid black;	
+				position: absolute;
+				background:black;
+  				background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.1) 40%, rgba(0, 0, 0, 0) 50%);
+			}
+			
+			.wheel.left {
+			  	-webkit-transform: translateY(35px) translateZ(-55px);
+			  	-moz-transform: translateY(35px) translateZ(-55px);
+			  	transform: translateY(35px) translateZ(-55px);			
+			}
+			
+			.wheel.right {
+			  	-webkit-transform: translateY(35px) translateZ(55px);
+			  	-moz-transform: translateY(35px) translateZ(55px);
+			  	transform: translateY(35px) translateZ(55px);			
+			}
+			
+			.wheel.front.left {
+			  	-webkit-transform: translateY(35px) translateZ(-55px) translateX(110px);
+			  	-moz-transform: translateY(35px) translateZ(-55px) translateX(110px);
+			  	transform: translateY(35px) translateZ(-55px) translateX(110px);			
+			}
+
+			.wheel.front.right {
+			  	-webkit-transform: translateY(35px) translateZ(55px) translateX(110px);
+			  	-moz-transform: translateY(35px) translateZ(55px) translateX(110px);
+			  	transform: translateY(35px) translateZ(55px) translateX(110px);			
+			}
+			
+			.redlight {
+				width:1px;
+				height:130px;
+				background:transparent;
+				box-shadow:4px 4px 6px red;
+			  	-webkit-transform: rotateZ(90deg) rotateX(0deg) translateY(110px) translateZ(00px) translateX(-80px);
+			  	/*-moz-transform: translateY(35px) translateZ(55px) translateX(110px);
+			  	transform: translateY(35px) translateZ(55px) translateX(110px);		*/	
+			}
+			
+			#barrier1 {
+				position:absolute;
+				left:100px;
+				top:10px;
+				background:black;
+				width:5px;
+				height:800px;
+			}
+			#barrier2 {
+				position:absolute;
+				left:1000px;
+				top:10px;
+				background:black;
+				width:5px;
+				height:800px;
+			}
+			#barrier3 {
+				position:absolute;
+				left:0px;
+				top:10px;
+				background:black;
+				width:800px;
+				height:5px;
+			}
+			#barrier4 {
+				position:absolute;
+				left:0px;
+				top:750px;
+				background:black;
+				width:800px;
+				height:5px;
+			}
+			
+			.logo {
+				margin-top:-20px;
+			}
+
+		</style>		
+				
+	</head>
+	<body>
+		
+		<!-- input id="active"  type="checkbox" checked="true" /> <label for="active" >auto-play</label-->
+		
+		<div class="robot" ></div>
+		
+		
+    <div class="wrapper">
+
+		<div id="experiment">
+			<div id="cube">
+				<div class="face one">
+					<img class="logo" src="logo.png" />
+				</div>
+				<div class="face two">
+					2
+				</div>
+				<div class="face three">
+					3
+				</div>
+				<div class="face four">
+					4
+				</div>
+				<div class="face five">
+					5				
+				</div>
+				<div class="face six">
+					6
+				</div>
+				<div class="wheel left" ></div>
+				<div class="wheel right" ></div>
+				<div class="wheel left front" ></div>
+				<div class="wheel right front" ></div>
+				<div class="redlight" ></div>
+			</div>
+		</div>
+
+    </div>
+    
+    <div id = "barrier1"  class="barrier" ></div>
+    <div id = "barrier2"  class="barrier" ></div>
+    <div id = "barrier3"  class="barrier" ></div>
+    <div id = "barrier4"  class="barrier" ></div>
+
+		
+	</body>
+
+</html>

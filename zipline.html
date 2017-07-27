@@ -1,0 +1,513 @@
+<html>
+	<head>
+		<title>
+			Zipline Demo
+		</title>
+		
+		<script src="../jquery.js" ></script>
+		
+		<link href="https://fonts.googleapis.com/css?family=Aldrich" rel="stylesheet">
+		
+		<script>
+		
+		//https://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+		CanvasRenderingContext2D.prototype.clear = 
+			  CanvasRenderingContext2D.prototype.clear || function (preserveTransform) {
+				if (preserveTransform) {
+				  this.save();
+				  this.setTransform(1, 0, 0, 1, 0, 0);
+				}
+
+				this.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+				if (preserveTransform) {
+				  this.restore();
+				}           
+			};
+			
+			//https://stackoverflow.com/questions/17083580/i-want-to-do-animation-of-an-object-along-a-particular-path
+			// quadratic bezier: percent is 0-1
+			function getQuadraticBezierXYatPercent(startPt,controlPt,endPt,percent) {
+				var x = Math.pow(1-percent,2) * startPt.x + 2 * (1-percent) * percent * controlPt.x + Math.pow(percent,2) * endPt.x; 
+				var y = Math.pow(1-percent,2) * startPt.y + 2 * (1-percent) * percent * controlPt.y + Math.pow(percent,2) * endPt.y; 
+				return( {x:x,y:y} );
+			}
+		
+			var ZS = (function($){
+				
+				var _ = {};
+				_.props = {
+					className : "zippy-scrolly",
+					width: 1200,
+					height: 500,
+					nameScheme: "ZS_canvas_",
+					dataName: "ZSd",
+					dataClassName: "data",
+					activeOverride: true
+				
+				};
+				_.instances = [];
+				
+				$(document).ready(function(){
+					
+					$("." + _.props.className).each(function(number, wrapper){
+						
+						_.instances.push(
+							(function(){
+								
+								var __ = {};
+								
+								__.parent = wrapper;
+								__.id = number;
+								__.objects = {};
+								
+								__.props = {
+									isActive: false,
+									interval: 25,
+									personPercent: 0,
+									percentIncrement: 0.0025,
+									leftOffset:20,
+									direction: 1,
+									scrollingWindow : 200,
+									barnObjects: [
+										[
+											70,
+											20,
+											50,
+											300
+										],
+										[
+											1000,
+											20,
+											50,
+											300
+										]
+									],
+									topLeft: [
+										120,
+										40
+									],
+									curveParams : [
+										120,
+										120,
+										1000,
+										80
+									],
+									personCoords: [
+										40,
+										40
+									],
+									lineWidth: 2,
+									ziplineWidth: function() {
+										return __.props.curveParams[2] - __.props.topLeft[0];
+									},
+									ziplineHeight: function() {
+										return __.props.curveParams[3] - __.props.topLeft[1];
+									},
+									locationX: function() {
+										return __.position * __.props.ziplineWidth();
+									},
+									locationY: function() {
+										
+									},
+									
+									begin: function() {
+										return {
+											X: __.props.topLeft[0],
+											Y: __.props.topLeft[1]
+										}
+									},
+									control: function() {
+										return {
+											X: __.props.curveParams[0],
+											Y: __.props.curveParams[1],
+											add: {
+												X: function(x) {
+													__.props.curveParams[0] += x;
+												},
+												Y: function(y) {
+													__.props.curveParams[1] += y;
+												}											
+											},
+											move: {
+												X: function (x) {
+													__.props.curveParams[0] = x;													
+												},
+												Y: function (y) {
+													__.props.curveParams[1] = y;												
+												}
+									
+											}
+										}
+									},
+									center: function() {
+										var b = __.props.begin(),
+											e = __.props.end();
+										return {
+											X: (b.X + e.X)/2,
+											Y: (b.Y + e.Y)/2
+										}
+									},
+									end: function() {
+										return {
+											X: __.props.curveParams[2],
+											Y: __.props.curveParams[3]
+										}
+									},
+									xinc: function() {
+										var width = __.props.end().X - __.props.begin().X;
+										var newPos = __.props.begin().X + __.props.personPercent * width;
+										var inc = newPos - __.props.control().X;
+										return inc;
+									},
+									person: function() {
+										var b = __.props.personCoords[0],
+											e = __.props.personCoords[0];
+										return {
+											X: __.props.personCoords[0],
+											Y: __.props.personCoords[1],
+											add: {
+												X: function(x) {
+													__.props.personCoords[0] += x;
+												},
+												Y: function(y) {
+													__.props.personCoords[1] += y;
+												}											
+											},
+											move: {
+												X: function (x) {
+													__.props.personCoords[0] = x;													
+												},
+												Y: function (y) {
+													__.props.personCoords[1] = y;												
+												}
+											
+											},
+											percent: function( pct ) {
+												if ( pct === undefined ) {
+													return __.props.personPercent;
+												} else {
+													__.props.personPercent = pct;
+												}
+											}
+										}
+									}															
+								};
+									
+								__.init = function() {
+								
+									var canvas = __.objects.canvas = document.createElement("canvas");
+									
+									__.props.width = _.props.width;
+									__.props.height = _.props.height;
+									__.props.position = 0;
+																		
+									canvas.id = _.props.nameScheme + __.id;
+									canvas.width = __.props.width;
+									canvas.height = __.props.height;
+									
+									__.parent.appendChild(canvas);
+									
+									
+									var data = __.objects.data = document.createElement("div");
+									
+									data.id = _.props.dataName + __.id;
+									data.className = _.props.dataClassName;
+									
+									__.parent.appendChild(data);
+									
+									__.props.isActive = true;
+									
+									return __.start();			
+
+								}
+								
+								__.render = function(){
+									
+									var ctx = __.objects.canvas.getContext("2d");
+									ctx.clear();
+
+									// draw the little poly-poles
+									
+									
+									for ( var i = 0; i < __.props.barnObjects.length; ++i ) {
+										ctx.beginPath();
+										ctx.rect.apply(ctx, __.props.barnObjects[i]);
+										ctx.strokeStyle = "black",
+										ctx.lineWidth = 3,
+										ctx.fillStyle = "rgba(0, 170, 245, 0.7)";
+										ctx.fill();
+										ctx.stroke();	
+										ctx.closePath();								
+
+									}
+																		
+									// draw the zipline
+									
+									ctx.beginPath();
+									ctx.lineWidth = __.props.lineWidth;
+									ctx.moveTo.apply(ctx, __.props.topLeft);
+									ctx.strokeStyle = "black";
+ 									ctx.quadraticCurveTo.apply(ctx, __.props.curveParams);
+									ctx.stroke();
+									ctx.closePath();
+									
+									//draw the camper on the zipline
+									
+									ctx.beginPath();
+									var person = __.props.person();
+									ctx.moveTo(person.X, person.Y);
+									ctx.beginPath();
+									ctx.arc(person.X, person.Y, 6, 0, 2 * Math.PI, false);
+									ctx.fillStyle = "#FFE0BD";
+									ctx.fill();
+									ctx.lineWidth = 1;
+									ctx.strokeStyle = "brown",
+									ctx.stroke();
+									ctx.closePath();
+
+									ctx.beginPath();
+									ctx.moveTo(person.X+10, person.Y+10);
+									ctx.beginPath();
+									ctx.arc(person.X, person.Y+13, 6, Math.PI/2,3* Math.PI/2, false);
+									ctx.fillStyle = "#FFE0BD";
+									ctx.lineWidth = 1;
+									ctx.strokeStyle = "brown",
+									ctx.stroke();
+									ctx.closePath();
+									
+									
+ 									if ( person.percent() > __.circle.range[0] && person.percent() < __.circle.range[1] ) {
+ 										if ( __.circle.on == false ) {
+ 											__.circle.go();
+ 										}
+ 									} else {
+ 										__.circle.stop();
+ 									}
+									
+									//var location = __.props.location();
+									
+									// h = -32t^2 + v0t + h0
+									
+									
+									//update data
+									
+									var displaySpeed = Math.floor((person.Y-40)/(40)*350)/10;
+									var elevation = Math.floor((250 - person.Y)*10)/10;
+									
+									__.objects.data.innerHTML = "\
+										<div class='number green speed' >" + displaySpeed + "<br>MPH</div>\
+										<div class='number blue elevation' >" + elevation + "<br>FT HI</div>\
+										\
+									";									
+									
+									if ( __.circle.on ) {
+										if ( __.circle.pct < 1 ) {
+											__.circle.pct += __.circle.inc;
+										}
+									
+										ctx.beginPath();
+										ctx.moveTo(__.circle.x, __.circle.y);
+										ctx.beginPath();
+										ctx.arc(__.circle.x, __.circle.y, __.circle.radius, 0, __.circle.pct * 2 * Math.PI, false);
+										ctx.fillStyle = "#FFE0BD";
+										ctx.lineWidth = 1;
+										ctx.strokeStyle = "brown",
+										ctx.stroke();
+										ctx.closePath();
+										
+										if ( __.circle.pct >= 1  ) {
+											ctx.setLineDash(__.circle.lineDash);
+											ctx.beginPath();
+											ctx.moveTo.apply(ctx, __.circle.lineBegin);
+											ctx.lineTo.apply(ctx, __.circle.lineEnd);
+											ctx.stroke();
+											ctx.closePath();
+											ctx.setLineDash([]);
+											ctx.font = __.circle.font;
+											ctx.strokeStyle = "red";
+											ctx.fillText.apply(ctx,__.circle.fillText);
+										}
+									
+									}
+									return __;
+								};
+								
+								__.updateData = function() {
+								
+								}
+								
+								
+								__.circle = {
+									range: [.65, 1],
+									text: "Top speed",
+									lineBegin: [ 
+										787,
+										113
+									],
+									font : "30px Aldrich",
+									fillText: ["Top speed",700,220],
+									lineEnd: [
+										787,
+										193
+									],
+									lineDash: [
+										5,
+										3
+									],
+									pct: 0,
+									x: 787,
+									y: 93,
+									inc: .05,
+									radius: 20,
+									on: false,
+									go: function() {
+										__.circle.pct = 0;
+										__.circle.on = true;
+									},
+									stop: function() {
+										__.circle.pct = 0;
+										__.circle.on = false;
+									}
+								}
+								
+								__.start = function() {
+									
+									__.props.isActive = _.props.activeOverride;
+									
+									if ( __.props.isActive ) {										
+										
+										var pct = __.props.person().percent();
+										if ( pct >= 1 ) {
+											__.props.direction = -1;
+										} else if ( pct <= 0 ) {
+											__.props.direction = 1;
+										}
+										__.props.person().percent(
+											__.props.person().percent() +
+											__.props.percentIncrement *
+											__.props.direction
+										);
+										
+										__.props.control().add.X(
+											__.props.xinc()
+										);
+										
+									} else {
+										
+										var scrollTop = $(window).scrollTop();
+										var pct = Math.max(
+											0,
+											Math.min(
+												1,
+												scrollTop / __.props.scrollingWindow
+											)
+										);
+										__.props.person().percent(pct);
+										
+										__.props.control().add.X(
+											__.props.xinc()
+										);
+
+									
+									}
+	
+									xypos = getQuadraticBezierXYatPercent(
+										{
+											x: __.props.begin().X, 
+											y: __.props.begin().Y
+										},
+										{
+											x: __.props.control().X,
+											y: __.props.control().Y
+										},
+										{
+											x: __.props.end().X,
+											y: __.props.end().Y
+										},
+										
+										__.props.person().percent()
+									)
+									
+									__.props.person().move.X(xypos.x);
+									__.props.person().move.Y(xypos.y);
+							
+									setTimeout( __.start, __.props.interval );
+									
+									return __.render();
+									
+								}
+								
+								return __.init();
+							
+							})()
+						);						
+					
+					});
+				
+				});
+			
+				return _;
+			
+			
+			})(jQuery);
+			
+			
+			$(document).ready(function() {
+				$("#active").change(function() {
+					ZS.props.activeOverride = $("#active")[0].checked;
+				});
+			});
+		</script>
+		
+		
+		<style>
+		
+			body {
+				font-family:Aldrich;
+			}	
+			.zippy-scrolly {
+				height:1000;
+				margin-top:200px;
+				margin-left:auto;
+				margin-right:auto;
+			}
+			canvas {
+				height:400;
+				width:1000;
+				margin-left:auto;
+				margin-right:auto;
+				max-width:100%;
+			}
+			.number {
+				font-size:30pt;
+				width:120px;
+				display:inline-block;
+				margin-right:30px;
+				
+			}
+			.number.green {
+				color:#49fb35;
+			}
+			.number.blue {
+				color:rgba(0, 170, 245, 1);
+			}
+			.data {
+				margin-left:auto; margin-right:auto;
+				width:800px;
+				margin-top:-100px;
+				max-width:100%;
+			}
+		</style>
+		
+	</head>
+	<body>
+		
+		<input id="active"  type="checkbox" checked="true" /> <label for="active" >auto-play</label>
+		
+		<div class="zippy-scrolly" ></div>
+		
+		
+	</body>
+
+</html>

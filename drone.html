@@ -1,0 +1,356 @@
+<html>
+	<head>
+		<title>
+			Drone Demo
+		</title>
+		
+		<script src="../jquery.js" ></script>
+		
+		<script>
+		
+			var Dr = (function($){
+				
+				var _ = {};
+				_.props = {
+					className : "male-bee",
+					width: 1000,
+					height: 500,
+					nameScheme: "mb_wrap_",
+					activeOverride: true
+				
+				};
+				_.instances = [];
+				
+				$(document).ready(function(){
+					
+					$("." + _.props.className).each(function(number, wrapper){
+						
+						_.instances.push(
+							(function(){
+								
+								var __ = {};
+								
+								__.parent = wrapper;
+								__.id = number;
+								__.objects = {};
+								
+								__.props = {
+									isActive: false,
+									interval: 25,
+									directionX: 1,
+									directionY: 1,
+									scrollingWindow : 200
+								}
+									
+								__.init = function() {
+								
+									var wrap = __.objects.wrap = document.createElement("div");
+									
+									__.props.width = _.props.width;
+									__.props.height = _.props.height;
+									__.props.position = 0;
+																		
+									wrap.id = _.props.nameScheme + __.id;
+									wrap.className = _.props.nameScheme;
+									wrap.width = __.props.width;
+									wrap.height = __.props.height;
+									
+									__.parent.appendChild(wrap);
+									
+									//__.props.isActive = true;
+									
+									return __.start();			
+
+								}
+								
+								__.render = function(){
+								
+								
+									var drone = "\
+									<div id='drone_arm_1' ></div>\
+									<div id='drone_arm_2' ></div>\
+									<div id='propellor_1' class='propellor' ></div>\
+									<div id='propellor_2' class='propellor' ></div>\
+									<div id='propellor_3' class='propellor' ></div>\
+									<div id='propellor_4' class='propellor' ></div>\
+									\
+									\
+									\
+									\
+									\
+									";
+									
+									__.objects.wrap.innerHTML = drone;
+
+									return __;
+								};
+								
+								__.start = function() {
+									
+									__.props.isActive = _.props.activeOverride;
+									
+									if ( __.props.isActive ) {										
+										//return;
+									} else {
+										//return;									
+									}
+								
+									//setTimeout( __.start, __.props.interval );
+									
+									return __.render();
+									
+								}
+								
+								return __.init();
+							
+							})()
+						);						
+					
+					});
+				
+				});
+			
+				return _;
+			
+			
+			})(jQuery);
+						
+			$(document).ready(function() {
+				$("#active").change(function() {
+					RB.props.activeOverride = $("#active")[0].checked;
+				});
+			});
+		</script>
+		
+		<script>
+		
+			$(document).ready(function(){
+
+				var deg = 0;		
+				var rps = 7.364;		
+				function spin_propellors(time) {
+				
+					
+					deg = (deg + time/1000*rps*360)//%360;
+					$(".propellor").css("transform", "rotate(" + deg + "deg)");
+					
+					requestAnimationFrame(spin_propellors);
+				}
+				
+				spin_propellors(0);
+				
+				
+				path = [];
+				
+				for ( var i=0; i<900; i+=3 ) {
+					path.push([i, 200*Math.sin(i/100)]);
+				}				
+				
+				console.log(path);
+				var where = 0, dir = 1;
+				
+				var active = true, scz = 300;
+				
+				var rot = 0;
+				
+				function step() {
+				
+					if ( Math.random() > 0.95 ) {
+						rot += Math.random()*3 - 1.5;
+					}
+					
+					$(".male-bee").css("transform", "rotate(" + rot + "deg)" );
+					
+					if ( !active ) {
+					
+						where += dir;
+					
+						if ( where >= path.length || where < 0) {
+							where -= dir;
+							dir = -1 * dir;
+						}
+					
+						$(".male-bee").css("left", path[where][0]).css("top", 200 - path[where][1]);
+					
+						requestAnimationFrame(step);
+					
+					} else {
+					
+						var scrollTop = $(window).scrollTop();
+						var pct = Math.max(
+							0,
+							Math.min(
+								1,
+								scrollTop / scz
+							)
+						);
+						
+						var w = Math.floor(pct * path.length);
+						
+						console.log(w);
+						
+						$(".male-bee").css("left", path[w][0]).css("top", 200 - path[w][1]);
+	
+						requestAnimationFrame(step);
+					
+					
+					}
+				}
+				
+				step();				
+
+			});
+
+		
+		
+		</script>
+		
+		
+		<style>
+		body {
+			height:1000px;
+		}
+			.male-bee {
+				position:absolute;
+				left:0;
+				top:0;
+				margin:100px;
+				transition:all 0.01s;
+				
+			}
+			.mb_wrap_ {
+				position:absolute;
+			}
+			#drone_arm_1 {
+				width:150px;
+				height:20px;
+				border-radius:8px;
+				border:1px solid #ccc;
+				box-shadow:2px 2px 2px #eee, 2px -2px 2px #eee;
+				position:absolute;
+				left:0px;
+				top:62px;
+				z-index:3;
+				background:img("logo.png");
+			
+			}
+			#drone_arm_2 {
+				height:150px;
+				width:20px;
+				border-radius:8px;
+				border:1px solid #ccc;
+				box-shadow:2px 2px 2px #eee, -2px 2px 2px #eee;
+				top:0px;
+				left:62px;
+				position:absolute;
+				z-index:2;
+				
+			
+			}
+			
+			.propellor {
+				width:0px;
+				height:0px;
+				border:3px solid transparent;
+				border-bottom:10px solid black;
+				border-radius:50%;
+				position:absolute;
+				transform-origin:2px 4px;
+			}
+			
+			.propellor:before {
+				content:'';
+				width:0px;
+				height:0px;
+				border:3px solid transparent;
+				border-bottom:10px solid black;
+				border-radius:50%;
+				z-index:3;
+				transform:rotate(120deg);
+				margin-top:-7px;
+				margin-left:-5px;
+				position:absolute;
+				right:100%;
+			}
+			
+			.propellor:after {
+				content:'';
+				width:0px;
+				height:0px;
+				border:3px solid transparent;
+				border-bottom:10px solid black;
+				border-radius:50%;
+				z-index:3;
+				transform:rotate(240deg);
+				margin-top:-7px;
+				margin-right:-5px;
+				position:absolute;
+				right:100%;				
+			}
+			
+			#propellor_1 {
+				left:10;
+				top:68;
+				z-index:5;
+			}
+
+			#propellor_2 {
+				left:135;
+				top:68;
+				z-index:5;
+			}
+
+			#propellor_3 {
+				left:70;
+				top:8;
+				z-index:5;
+			}
+
+			#propellor_4 {
+				left:70;
+				top:133;
+				z-index:5;
+			}
+			
+			#barrier_1 {
+				position:absolute;
+				background:black;
+				width:50px;
+				height:50px;
+				top:300px;
+				left:300px;
+			}
+			#barrier_2 {
+				position:absolute;
+				background:url("logo.png");
+				background-size:100%;
+				width:50px;
+				height:50px;
+				top:300px;
+				left:600px;
+			}
+			#barrier_3 {
+				position:absolute;
+				background:black;
+				width:50px;
+				height:50px;
+				top:300px;
+				left:950px;
+			}
+		</style>		
+				
+	</head>
+	<body>
+		
+		<!-- input id="active"  type="checkbox" checked="true" /> <label for="active" >auto-play</label-->
+		
+		<div class="male-bee" ></div>
+		
+		<div id="barrier_1" ></div>
+		<div id="barrier_2" ></div>
+		<div id="barrier_3" ></div>
+		
+		
+	</body>
+
+</html>
